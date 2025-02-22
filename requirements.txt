@@ -1,0 +1,9 @@
+numpy
+pydantic
+scipy
+requests
+loguru
+fastapi
+uvicorn
+transformers
+vllm

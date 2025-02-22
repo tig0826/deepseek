@@ -1,7 +1,5 @@
-# FROM nvidia/cuda:12.1.1-base-ubuntu22.04
+# 軽量な Python ベースのイメージ
 FROM python:3.11.6-slim
-
-RUN pip install poetry
 
 # 必要なライブラリをインストール
 RUN apt-get update && apt-get install -y \
@@ -9,29 +7,34 @@ RUN apt-get update && apt-get install -y \
     curl \
     libpq-dev \
     gcc \
+    g++ \
+    cmake \
+    ninja-build \
     fonts-noto-cjk \
     kmod \
     && rm -rf /var/lib/apt/lists/*
 
-# 必要なPythonパッケージをインストール
-# ENV PATH="$POETRY_HOME/bin:$PATH"
-# COPY pyproject.toml pyproject.toml
-# RUN poetry install --no-root
-RUN python3 -m pip install --no-cache-dir --upgrade pip
+# pip のアップグレード
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# 依存関係の事前インストール
-RUN pip install --no-cache-dir numpy
+# **NumPy を事前にインストール**
+RUN python3 -m pip install --no-cache-dir numpy
 
+# **PyTorch の CPU バージョンをインストール**
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# vLLM を wheel からインストール
+COPY whl_cache/vllm-*.whl /tmp/
+RUN pip install --no-cache-dir /tmp/vllm-*.whl
+
+# **vLLM のインストール（プリビルドバイナリを利用）**
+# RUN pip install --no-cache-dir --timeout=10000 vllm  # 公式の PyPI バイナリを利用
+
+# 依存関係のインストール
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# PyTorch の CPU バージョンをインストール
-RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
-# vLLM（CPUで動作するようにインストール）
-RUN pip install --no-cache-dir vllm
-
-# モデルのダウンロード（or ローカルマウント）
+# **モデルのダウンロード（or ローカルマウント）**
 RUN git clone https://huggingface.co/deepseek-ai/DeepSeek-R1 /models/deepseek
 
 # 作業ディレクトリ

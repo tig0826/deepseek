@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepseek
+  namespace: deepseek
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepseek
+  template:
+    metadata:
+      labels:
+        app: deepseek
+    spec:
+      containers:
+      - name: deepseek
+        image: ollama/ollama
+        ports:
+        - containerPort: 11434
+        volumeMounts:
+        - mountPath: /root/.ollama/models
+          name: ollama-storage
+      volumes:
+      - name: ollama-storage
+        persistentVolumeClaim:
+          claimName: deepseek-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepseek-service
+  namespace: deepseek
+spec:
+  selector:
+    app: deepseek
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 11434
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deepseek-pvc
+  namespace: deepseek
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: nfs-csi
