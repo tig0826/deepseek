@@ -1,9 +1,7 @@
-numpy
-pydantic
-scipy
-requests
-loguru
 fastapi
 uvicorn
-transformers
-vllm
+sqlalchemy
+trino
+langchain
+langchain-ollama
+langchain-community
