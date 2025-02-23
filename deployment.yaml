@@ -1,54 +1,53 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deepseek
-  namespace: deepseek
+  name: langchain-server
+  labels:
+    app: langchain
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: deepseek
+      app: langchain
   template:
     metadata:
       labels:
-        app: deepseek
+        app: langchain
     spec:
       containers:
-      - name: deepseek
-        image: ollama/ollama
-        ports:
-        - containerPort: 11434
-        volumeMounts:
-        - mountPath: /root/.ollama/models
-          name: ollama-storage
-      volumes:
-      - name: ollama-storage
-        persistentVolumeClaim:
-          claimName: deepseek-pvc
+        - name: langchain-container
+          image: tig0826/dqx-deepseek:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "6Gi"
+              cpu: "2"
+            limits:
+              memory: "8Gi"
+              cpu: "4"
+          env:
+            - name: TRINO_HOST
+              value: "trino.mynet"
+            - name: TRINO_PORT
+              value: "80"
+            - name: TRINO_USER
+              value: "tig"
+            - name: TRINO_CATALOG
+              value: "iceberg"
+            - name: TRINO_SCHEMA
+              value: "dqx"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: deepseek-service
-  namespace: deepseek
+  name: langchain-service
 spec:
   selector:
-    app: deepseek
+    app: langchain
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 11434
-  type: LoadBalancer
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: deepseek-pvc
-  namespace: deepseek
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
-  storageClassName: nfs-csi
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+
